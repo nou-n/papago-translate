@@ -94,7 +94,7 @@ exports.papago = class papago {
      * 파파고 번역
      * 
      * @param {string} text 번역할 텍스트
-     * @param {string} to 어느 언어로 번역할 지
+     * @param {string} to 어느 언어로 번역할지
      */
     async translate({ text, to }) {
         let dect_token = await this.#getAuthorization("https://papago.naver.com/apis/langs/dect");
