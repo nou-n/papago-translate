@@ -4,7 +4,7 @@ const qs = require("qs");
 
 exports.papago = class papago {
     #key;
-    
+
     #base64 = {
         _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
         _reverseMap: null,
@@ -75,7 +75,7 @@ exports.papago = class papago {
     
             return o.create(output, byteCount); // 원래 데이터 생성 (o.create가 정의되어 있다고 가정)
         }
-    }
+    };
 
     /**
      * 랜덤한 UUID를 반환합니다.
@@ -90,44 +90,31 @@ exports.papago = class papago {
     }
 
     /**
-     * 파파고 요청에 사용되는 Authorization 토큰을 가져옵니다.
+     * Authorization 토큰을 생성하는 데 필요한 키를 설정합니다.
+     */
+    async #setAuthorizationKey() {
+        const response = await axios.get("https://papago.naver.com/", {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            }
+        });
+        const jsURL =  "https://papago.naver.com/home."+response.data.split(`<link rel="preload" href="/home.`)[1].split(`.js" as="script"/>`)[0]+".js";
+        const jsResponse = await axios.get(jsURL, {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        });
+        this.#key = jsResponse.data.replaceAll(" ", "").split("AUTH_KEY:\"")[1].split("\"")[0];
+    }
+
+    /**
+     * 파파고 요청에 사용되는 Authorization 토큰을 생성합니다.
      * 
      * @param {string} url 요청 url
      */
     async #getAuthorization(url) {
-        if(!this.#key) {
-            let js_url = await axios.get("https://papago.naver.com/", {
-                headers: {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                    "Accept-Encoding": "gzip, deflate, br, zstd",
-                    "Accept-Language": "ko-KR,ko;q=0.9",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache",
-                    "Priority": "u=0, i",
-                    "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
-                    "Sec-Ch-Ua-Mobile": "?0",
-                    "Sec-Ch-Ua-Platform": "\"Windows\"",
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "none",
-                    "Sec-Fetch-User": "?1",
-                    "Upgrade-Insecure-Requests": "1",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-                }
-            }).then((response) => {
-                let html = response.data;
-                return "https://papago.naver.com/home."+html.split(`<link rel="preload" href="/home.`)[1].split(`.js" as="script"/>`)[0]+".js";
-            });
-            this.#key = await axios.get(js_url, {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-            }).then((response) => {
-                let js = response.data.replaceAll(" ", "");
-                return js.split(`AUTH_KEY:"`)[1].split(`"`)[0];
-            });
-        }
-        let uuid_ = this.#getUUID(), timestamp = Date.now();
-        let token = `PPG ${uuid_}:${cryptojs.HmacMD5(`${uuid_}\n${url}\n${timestamp}`, this.#key).toString(this.#base64)}`;
-        return [uuid_, timestamp, token];
+        this.#key ?? await this.#setAuthorizationKey();
+        const uuid = this.#getUUID(), timestamp = Date.now();
+        const token = `PPG ${uuid}:${cryptojs.HmacMD5(`${uuid}\n${url}\n${timestamp}`, this.#key).toString(this.#base64)}`;
+        return [uuid, timestamp, token];
     }
 
     /**
