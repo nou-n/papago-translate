@@ -1,5 +1,27 @@
 # papago-translate
-API 키 없이 파파고 번역 API를 사용할 수 있습니다.
+API 키 없이 파파고 번역 및 언어 감지 API를 사용할 수 있습니다.
+
+## 번역 기능
+
+```js
+const { papago } = require("./papago");
+(async () => {
+    const client = new papago();
+    let translated = await client.translate({text: "Ravi de vous rencontrer.", to: "ko"});
+    console.log(translated.translatedText); // 만나서 반가워요.
+})();
+```
+
+## 언어 감지 기능
+
+```js
+const { papago } = require("./papago");
+(async () => {
+    const client = new papago();
+    let langCode = await client.detect({text: "Ravi de vous rencontrer."});
+    console.log(langCode); // fr
+})();
+```
 
 ## 사용 예시
 
