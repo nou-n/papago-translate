@@ -105,9 +105,10 @@ exports.papago = class papago {
     /**
      * 파파고 번역
      * 
-     * @param {string} text 번역할 텍스트
-     * @param {string} to 어느 언어로 번역할지
-     * @param {string=} from 번역할 텍스트의 언어
+     * @param {Object} param
+     * @param {string} param.text 번역할 텍스트
+     * @param {string} param.to 어느 언어로 번역할지
+     * @param {string=} param.from 번역할 텍스트의 언어
      */
     async translate({ text, to, from }) {
         from = from ?? await this.detect({ text });
@@ -154,7 +155,8 @@ exports.papago = class papago {
     /**
      * 파파고 언어 감지
      * 
-     * @param {string} text 감지할 텍스트
+     * @param {Object} param
+     * @param {string} param.text 감지할 텍스트
      */
     async detect({ text }) {
         const dect_token = await this.#getAuthorization("https://papago.naver.com/apis/langs/dect");
