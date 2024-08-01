@@ -4,6 +4,7 @@ const qs = require("qs");
 
 exports.papago = class papago {
     #key;
+    
     #base64 = {
         stringify: function(e) {
             var t = e.words
@@ -47,14 +48,24 @@ exports.papago = class papago {
         },
         _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
     }
-    #uuid() {
-        var a = Date.now();
+
+    /**
+     * 랜덤한 UUID를 반환합니다.
+     */
+    #getUUID() {
+        let timestamp = Date.now();
         return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (function(e) {
-            var t = (a + 16 * Math.random()) % 16 | 0;
-            return a = Math.floor(a / 16),
+            let t = (timestamp + 16 * Math.random()) % 16 | 0;
+            return timestamp = Math.floor(timestamp / 16),
             ("x" === e ? t : 3 & t | 8).toString(16)
         }));
     }
+
+    /**
+     * 파파고 요청에 사용되는 Authorization 토큰을 가져옵니다.
+     * 
+     * @param {string} url 요청 url
+     */
     async #getAuthorization(url) {
         if(!this.#key) {
             let js_url = await axios.get("https://papago.naver.com/", {
@@ -86,43 +97,22 @@ exports.papago = class papago {
                 return js.split(`AUTH_KEY:"`)[1].split(`"`)[0];
             });
         }
-        let uuid_ = this.#uuid(), timestamp = Date.now();
+        let uuid_ = this.#getUUID(), timestamp = Date.now();
         let token = `PPG ${uuid_}:${cryptojs.HmacMD5(`${uuid_}\n${url}\n${timestamp}`, this.#key).toString(this.#base64)}`;
         return [uuid_, timestamp, token];
     }
+
     /**
      * 파파고 번역
      * 
      * @param {string} text 번역할 텍스트
-     * @param {string} to 어느 언어로 번역할지
+     * @param {string} to 어느 언어로 번역할 지
+     * @param {string=} from 번약할 텍스트의 언어
      */
-    async translate({ text, to }) {
-        let dect_token = await this.#getAuthorization("https://papago.naver.com/apis/langs/dect");
-        let from = await axios.post("https://papago.naver.com/apis/langs/dect", qs.stringify({query: text}), {
-            headers: {
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip, deflate, br, zstd",
-                "Accept-Language": "ko",
-                "Authorization": dect_token[2],
-                "Cache-Control": "no-cache",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "Device-Type": "pc",
-                "Origin": "https://papago.naver.com",
-                "Pragma": "no-cache",
-                "Priority": "u=1, i",
-                "Referer": "https://papago.naver.com/",
-                "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
-                "Sec-Ch-Ua-Mobile": "?0",
-                "Sec-Ch-Ua-Platform": "\"Windows\"",
-                "Sec-Fetch-Dest": "empty",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Site": "same-origin",
-                "Timestamp": dect_token[1],
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-            }
-        }).then((response) => response.data.langCode);
-        let translate_token = await this.#getAuthorization("https://papago.naver.com/apis/n2mt/translate");
-        let data = await axios.post("https://papago.naver.com/apis/n2mt/translate", qs.stringify({
+    async translate({ text, to, from }) {
+        from = from ?? await this.detect({ text });
+        const translate_token = await this.#getAuthorization("https://papago.naver.com/apis/n2mt/translate");
+        const data = await axios.post("https://papago.naver.com/apis/n2mt/translate", qs.stringify({
             deviceId: translate_token[0],
             locale: "ko",
             dict: "true",
@@ -159,5 +149,38 @@ exports.papago = class papago {
             }
         }).then((response) => response.data);
         return data;
+    }
+    
+    /**
+     * 파파고 언어 감지
+     * 
+     * @param {string} text 감지할 텍스트
+     */
+    async detect({ text }) {
+        const dect_token = await this.#getAuthorization("https://papago.naver.com/apis/langs/dect");
+        const langCode = await axios.post("https://papago.naver.com/apis/langs/dect", qs.stringify({query: text}), {
+            headers: {
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "Accept-Language": "ko",
+                "Authorization": dect_token[2],
+                "Cache-Control": "no-cache",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "Device-Type": "pc",
+                "Origin": "https://papago.naver.com",
+                "Pragma": "no-cache",
+                "Priority": "u=1, i",
+                "Referer": "https://papago.naver.com/",
+                "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": "\"Windows\"",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "Timestamp": dect_token[1],
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            }
+        }).then((response) => response.data.langCode);
+        return langCode;
     }
 }
