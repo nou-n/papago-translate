@@ -125,7 +125,7 @@ exports.papago = class papago {
      * @param {Object} param
      * @param {string} param.text 번역할 텍스트
      * @param {string} param.to 어느 언어로 번역할지
-     * @param {string=} param.from 번역할 텍스트의 언어
+     * @param {string} param.from 번역할 텍스트의 언어
      */
     async translate({ text, to, from }) {
         from = from ?? await this.detect({ text });
