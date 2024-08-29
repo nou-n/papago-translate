@@ -77,6 +77,45 @@ exports.papago = class papago {
         }
     };
 
+    #speakers = {
+        ko: {
+            male: "jinho",
+            female: "kyuri"
+        },
+        en: {
+            male: "matt",
+            female: "clara"
+        },
+        es: {
+            male: "jose",
+            female: "carmen"
+        },
+        fr: {
+            male: "louis",
+            female: "roxane"
+        },
+        ja: {
+            male: "shinji",
+            female: "yuri"
+        },
+        ru: {
+            male: "aleksei",
+            female: "vera"
+        },
+        th: {
+            male: "sarawut",
+            female: "somsi"
+        },
+        "zh-CN": {
+            male: "liangliang",
+            female: "meimei"
+        },
+        "zh-TW": {
+            male: "kuanlin",
+            female: "chiahua"
+        }
+    }
+
     /**
      * 랜덤한 UUID를 반환합니다.
      */
@@ -201,5 +240,50 @@ exports.papago = class papago {
             }
         }).then((response) => response.data.langCode);
         return langCode;
+    }
+
+    /**
+     * TTS 음성 파일 URL을 가져옵니다.
+     * 
+     * @param {Object} param
+     * @param {string} param.text TTS 텍스트
+     * @param {number} [param.pitch=0] 목소리의 높낮이
+     * @param {number} [param.speed=0] 목소리의 속도
+     * @param {string} [param.gender="female"] 목소리의 성별
+     */
+    async tts({ text, pitch = 0, speed = 0, gender = "female" }) {
+        const langCode = await this.detect({ text });
+        if(!Object.keys(this.#speakers).includes(langCode)) return false;
+        const speaker = this.#speakers[langCode][gender];
+        const tts_token = await this.#getAuthorization("https://papago.naver.com/apis/tts/makeID");
+        const id = await axios.post("https://papago.naver.com/apis/tts/makeID", qs.stringify({
+            alpha: 0,
+            pitch,
+            speaker,
+            speed,
+            text
+        }), {
+            headers: {
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "Accept-Language": "ko",
+                "Authorization": tts_token[2],
+                "Cache-Control": "no-cache",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "Origin": "https://papago.naver.com",
+                "Pragma": "no-cache",
+                "Priority": "u=1, i",
+                "Referer": "https://papago.naver.com/",
+                "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": "\"Windows\"",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "Timestamp": tts_token[1],
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            }
+        });
+        return `https://papago.naver.com/apis/tts/${id.data.id}`;
     }
 }
