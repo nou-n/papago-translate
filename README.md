@@ -31,8 +31,8 @@ const axios = require("axios");
 const fs = require("fs");
 (async () => {
     const client = new papago();
-    let url = await client.tts({ text: "Ravi de vous rencontrer." }); // https://papago.naver.com/apis/tts/...
-    let tts = await axios.get(url, { responseType: "arraybuffer" });
+    let url = await client.tts({text: "Ravi de vous rencontrer."}); // https://papago.naver.com/apis/tts/...
+    let tts = await axios.get(url, {responseType: "arraybuffer"});
     fs.writeFileSync("./tts.mp4", tts.data);
 })();
 ```
