@@ -23,6 +23,20 @@ const { papago } = require("./papago");
 })();
 ```
 
+## TTS 기능
+
+```js
+const { papago } = require("./papago");
+const axios = require("axios");
+const fs = require("fs");
+(async () => {
+    const client = new papago();
+    let url = await client.tts({ text: "Ravi de vous rencontrer." }); // https://papago.naver.com/apis/tts/...
+    let tts = await axios.get(url, { responseType: "arraybuffer" });
+    fs.writeFileSync("./tts.mp4", tts.data);
+})();
+```
+
 ## 사용 예시
 
 ### 코드
