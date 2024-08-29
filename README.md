@@ -1,7 +1,9 @@
 # papago-translate
 API 키 없이 파파고 번역 및 언어 감지 API를 사용할 수 있습니다.
 
-## 번역 기능
+## 기능
+
+<details><summary><h3>1️⃣ 번역</h3></summary>
 
 ```js
 const { papago } = require("./papago");
@@ -11,8 +13,9 @@ const { papago } = require("./papago");
     console.log(translated.translatedText); // 만나서 반가워요.
 })();
 ```
+</details>
 
-## 언어 감지 기능
+<details><summary><h3>2️⃣ 언어 감지</h3></summary>
 
 ```js
 const { papago } = require("./papago");
@@ -22,8 +25,9 @@ const { papago } = require("./papago");
     console.log(langCode); // fr
 })();
 ```
+</details>
 
-## TTS 기능
+<details><summary><h3>3️⃣ TTS</h3></summary>
 
 ```js
 const { papago } = require("./papago");
@@ -36,10 +40,12 @@ const fs = require("fs");
     fs.writeFileSync("./tts.mp4", tts.data);
 })();
 ```
+</details>
 
 ## 사용 예시
 
-### 코드
+<details open><summary><h3>코드</h3></summary>
+    
 ```js
 const { papago } = require("./papago");
 
@@ -60,8 +66,10 @@ const { papago } = require("./papago");
     }
 })();
 ```
+</details>
 
-### 출력
+<details open><summary><h3>출력</h3></summary>
+
 ```
 번역된 텍스트: 만나서 반가워요.
 
@@ -85,3 +93,4 @@ rencontrer
    의미 1: 서로 만나다,서로 알게 되다,회견하다
    의미 2: [비유] 서로 (생각·감정이) 일치하다
 ```
+</details>
