@@ -137,7 +137,7 @@ exports.papago = class papago {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
             }
         });
-        const jsURL =  "https://papago.naver.com/home."+response.data.split(`<link rel="preload" href="/home.`)[1].split(`.js" as="script"/>`)[0]+".js";
+        const jsURL =  "https://papago.naver.com/vendors~home."+response.data.split(`<link rel="preload" href="/vendors~home.`)[1].split(`.js" as="script"/>`)[0]+".js";
         const jsResponse = await axios.get(jsURL, {
             headers: {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
