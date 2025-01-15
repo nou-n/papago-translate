@@ -1,5 +1,5 @@
 # papago-translate
-API 키 없이 파파고 번역 및 언어 감지 API를 사용할 수 있습니다.
+파파고 번역 API
 
 ## 기능
 
