@@ -6,75 +6,73 @@ exports.papago = class papago {
     #key;
 
     #base64 = {
-        _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-        _reverseMap: null,
-        stringify: function ({ words, sigBytes }) {
+        stringify: function(input) {
+            const words = input.words;
+            const sigBytes = input.sigBytes;
             const map = this._map;
+    
+            input.clamp();
+    
             const output = [];
-            const paddingChar = map.charAt(64);
-            let chunk, i, a;
+            for (let i = 0; i < sigBytes; i += 3) {
+                const chunk = 
+                    ((words[i >>> 2] >>> (24 - (i % 4) * 8) & 255) << 16) |
+                    ((words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8) & 255) << 8) |
+                    (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8) & 255);
     
-            // 3바이트 청크 단위로 반복
-            for (i = 0; i < sigBytes; i += 3) {
-                chunk = (words[i >>> 2] >>> (24 - (i % 4) * 8) & 0xFF) << 16 |
-                        (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8) & 0xFF) << 8 |
-                        (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8) & 0xFF);
-    
-                // 4개의 Base64 문자로 변환
-                for (a = 0; a < 4 && i + 0.75 * a < sigBytes; a++) {
-                    output.push(map.charAt((chunk >>> (6 * (3 - a))) & 0x3F));
+                for (let a = 0; a < 4 && i + 0.75 * a < sigBytes; a++) {
+                    output.push(map.charAt((chunk >>> (6 * (3 - a))) & 63));
                 }
             }
     
-            // 필요한 경우 패딩 추가
-            while (output.length % 4) {
-                output.push(paddingChar);
-            }
-    
-            return output.join('');
-        },
-        parse: function (input) {
-            const map = this._map;
-            const length = input.length;
-    
-            // 역 맵 초기화 (이미 초기화되지 않은 경우)
-            if (!this._reverseMap) {
-                this._reverseMap = Array.from(map).reduce((acc, char, index) => {
-                    acc[char.charCodeAt(0)] = index; // 문자에 대한 인덱스 저장
-                    return acc;
-                }, []);
-            }
-            const reverseMap = this._reverseMap;
-    
-            // 패딩 처리
             const paddingChar = map.charAt(64);
-            let effectiveLength = length;
+            if (paddingChar) {
+                while (output.length % 4) {
+                    output.push(paddingChar);
+                }
+            }
+    
+            return output.join("");
+        },
+        parse: function(input) {
+            let length = input.length;
+            const map = this._map;
+            let reverseMap = this._reverseMap;
+    
+            if (!reverseMap) {
+                reverseMap = this._reverseMap = [];
+                for (let i = 0; i < map.length; i++) {
+                    reverseMap[map.charCodeAt(i)] = i;
+                }
+            }
+    
+            const paddingChar = map.charAt(64);
             if (paddingChar) {
                 const paddingIndex = input.indexOf(paddingChar);
                 if (paddingIndex !== -1) {
-                    effectiveLength = paddingIndex; // 패딩 위치를 기준으로 길이 조정
+                    length = paddingIndex;
                 }
             }
     
-            // 결과 배열 초기화
-            const output = new Uint32Array((effectiveLength * 3) / 4);
-            let byteCount = 0;
+            return (function(encodedString, length, reverseMap) {
+                const result = [];
+                let index = 0;
     
-            // 4개의 Base64 문자를 한 번에 처리
-            for (let i = 0; i < effectiveLength; i += 4) {
-                const a = reverseMap[input.charCodeAt(i)] || 0;
-                const b = reverseMap[input.charCodeAt(i + 1)] || 0;
-                const c = reverseMap[input.charCodeAt(i + 2)] || 0;
-                const d = reverseMap[input.charCodeAt(i + 3)] || 0;
+                for (let i = 0; i < length; i++) {
+                    if (i % 4) {
+                        const a = reverseMap[encodedString.charCodeAt(i - 1)] << (i % 4 * 2);
+                        const b = reverseMap[encodedString.charCodeAt(i)] >>> (6 - (i % 4 * 2));
+                        const combined = a | b;
     
-                // 바이트를 조합하여 결과 배열에 저장
-                output[byteCount++] = (a << 2) | (b >> 4);
-                output[byteCount++] = (b << 4) | (c >> 2);
-                output[byteCount++] = (c << 6) | d;
-            }
+                        result[index >>> 2] |= combined << (24 - index % 4 * 8);
+                        index++;
+                    }
+                }
     
-            return o.create(output, byteCount); // 원래 데이터 생성 (o.create가 정의되어 있다고 가정)
-        }
+                return o.create(result, index);
+            })(input, length, reverseMap);
+        },
+        _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
     };
 
     #speakers = {
